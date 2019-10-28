@@ -1,4 +1,4 @@
-# e2framework-core
+# e2core
 
 This repository contains the **core code** for `e2framework`.
 
