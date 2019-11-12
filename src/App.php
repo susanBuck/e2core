@@ -5,7 +5,7 @@ namespace E2;
 class App
 {
     /**
-     * Parameters
+     * Properties
      */
     private $routes;
     private $config;
@@ -13,10 +13,12 @@ class App
     private $blade;
     private $previousUrl;
     private $dotAccessConfig;
+    private $db;
 
     private $sessionRedirect = 'e2_session_redirect';
     private $sessionErrors = 'e2_session_errors';
     private $sessionPrevious = 'e2_session_previous';
+
     
     /**
      *
@@ -41,6 +43,23 @@ class App
 
         # Initialize Blade
         $this->blade = new \Philo\Blade\Blade(DOC_ROOT . '/views', DOC_ROOT . '/cache');
+
+        # Initialize Database PDO
+        $host = $this->env('DB_HOST');
+        $database = $this->env('DB_NAME');
+        $username = $this->env('DB_USERNAME');
+        $password = $this->env('DB_PASSWORD');
+        $charset = $this->env('DB_CHARSET', 'utf8mb4');
+
+        $this->db = new Database($host, $database, $username, $password, 'utf8mb4');
+    }
+
+    /**
+     * Getter method for DB instance
+     */
+    public function db()
+    {
+        return $this->db;
     }
 
     /**
@@ -175,7 +194,8 @@ class App
      */
     public function env($name, $default = null)
     {
-        return getenv($name) ?? $default;
+        # Note: getenv fill return `false`, not null, if a value does not exist
+        return getenv($name) != false ? getenv($name) : $default;
     }
 
     /**
