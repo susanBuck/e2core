@@ -48,15 +48,6 @@ class App
 
         # Initialize Blade
         $this->blade = new \Philo\Blade\Blade(DOC_ROOT . '/views', DOC_ROOT . '/cache');
-
-        # Initialize Database PDO
-        $host = $this->env('DB_HOST');
-        $database = $this->env('DB_NAME');
-        $username = $this->env('DB_USERNAME');
-        $password = $this->env('DB_PASSWORD');
-        $charset = $this->env('DB_CHARSET', 'utf8mb4');
-
-        $this->db = new Database($host, $database, $username, $password, 'utf8mb4');
     }
 
     /**
@@ -64,6 +55,16 @@ class App
      */
     public function db()
     {
+        if (is_null($this->db)) {
+            # Initialize Database PDO
+            $host = $this->env('DB_HOST');
+            $database = $this->env('DB_NAME');
+            $username = $this->env('DB_USERNAME');
+            $password = $this->env('DB_PASSWORD');
+            $charset = $this->env('DB_CHARSET', 'utf8mb4');
+
+            $this->db = new Database($host, $database, $usename, $password, 'utf8mb4');
+        }
         return $this->db;
     }
 
