@@ -63,7 +63,7 @@ class App
             $password = $this->env('DB_PASSWORD');
             $charset = $this->env('DB_CHARSET', 'utf8mb4');
 
-            $this->db = new Database($host, $database, $usename, $password, 'utf8mb4');
+            $this->db = new Database($host, $database, $username, $password, 'utf8mb4');
         }
         return $this->db;
     }
