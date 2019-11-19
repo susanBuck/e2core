@@ -29,8 +29,12 @@ class Database
     public function run($statement, $data = null)
     {
         $statement = $this->pdo->prepare($statement);
-        $statement->execute($data);
-        return $statement->fetchAll();
+
+        if ($statement->execute($data)) {
+            return $statement;
+        } else {
+            return $statement->errorInfo();
+        }
     }
 
     /**
@@ -38,7 +42,7 @@ class Database
      */
     public function all($table)
     {
-        return $this->run("SELECT * FROM ".$table);
+        return $this->run("SELECT * FROM ".$table)->fetchAll();
     }
 
     /**
@@ -52,5 +56,34 @@ class Database
         $sql = "INSERT INTO ".$table. "(".implode(', ', $fields).") values (:".implode(', :', $fields).")";
 
         return $this->run($sql, $data);
+    }
+
+    /**
+     * Migration method used to create a new table
+     */
+    public function createTable($table, $columns, $id = true)
+    {
+        # Drop table if it exists
+        $sql = 'DROP TABLE IF EXISTS ' . $table . ';';
+        $this->run($sql, []);
+
+        # Create table
+        $sql = ' CREATE TABLE ' . $table . ' (';
+
+        # Set up table with auto-incremending primary key `id`
+        if ($id) {
+            $sql .= 'id int NOT NULL AUTO_INCREMENT,';
+            $sql .= 'PRIMARY KEY (id), ';
+        }
+
+        foreach ($columns as $name => $type) {
+            $sql .= $name . ' ' . $type . ',';
+        }
+
+        $sql = rtrim($sql, ',').')';
+        
+        $this->run($sql, []);
+
+        return $sql;
     }
 }

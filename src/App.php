@@ -15,22 +15,25 @@ class App
     private $previousUrl;
     private $dotAccessConfig;
     private $db;
+    private $context;
 
     private $sessionRedirect = 'e2_session_redirect';
     private $sessionErrors = 'e2_session_errors';
     private $sessionPrevious = 'e2_session_previous';
 
-    
     /**
      *
      */
-    public function __construct()
+    public function __construct($context = 'web')
     {
         # Initialize Dotenv
         $dotenv = new \Dotenv\Dotenv(DOC_ROOT);
         $dotenv->load();
         $app = $this; # Define $app as $this because it's used in config.php
         $this->dotAccessConfig = new \Dflydev\DotAccessData\Data(include DOC_ROOT.'config.php');
+
+        # Set the context [`web` (default) or `console`]
+        $this->context = $context;
 
         # Set timezone
         date_default_timezone_set($this->config('app.timezone'));
@@ -45,9 +48,36 @@ class App
 
         # Load routes
         $this->routes = include DOC_ROOT.'routes.php';
-
+    
         # Initialize Blade
         $this->blade = new \Philo\Blade\Blade(DOC_ROOT . '/views', DOC_ROOT . '/cache');
+    }
+
+    /**
+    * Get a value from the config
+    */
+    public function config(string $key, $default = null)
+    {
+        return $this->dotAccessConfig->get($key) ?? $default;
+    }
+
+    /**
+     *
+     */
+    public function console($args)
+    {
+        # Parse arguments
+        $commandName = $args[1];
+        $method = $args[2];
+
+        # Set up command
+        $commandName = "App\Commands\\".$commandName."Command";
+        $command = new $commandName($this);
+
+        dump("Executing $commandName@$method");
+
+        # Execute
+        return $command->$method();
     }
 
     /**
@@ -58,6 +88,10 @@ class App
         if (is_null($this->db)) {
             # Initialize Database PDO
             $host = $this->env('DB_HOST');
+
+            # Command line needs 127.0.0.1 address to connect to DB
+            $host = ($host == 'localhost') ? '127.0.0.1' : $host;
+
             $database = $this->env('DB_NAME');
             $username = $this->env('DB_USERNAME');
             $password = $this->env('DB_PASSWORD');
@@ -69,58 +103,33 @@ class App
     }
 
     /**
-     * Returns a boolean value as to whether or not there are any validation errors
-     */
-    public function errorsExist()
+    * Get a value from .env
+    */
+    public function env(string $name, $default = null)
     {
-        return !is_null($this->errors) and count($this->errors) > 0;
+        # Note: getenv fill return `false`, not null, if a value does not exist
+        return getenv($name) != false ? getenv($name) : $default;
     }
-    
+
     /**
-     * Returns validation errors
-     */
+    * Returns validation errors
+    */
     public function errors()
     {
         return $this->errors;
     }
 
     /**
-     * Parses current url, returning a matching route if it exists
+     * Returns a boolean value as to whether or not there are any validation errors
      */
-    public function route()
+    public function errorsExist()
     {
-        $fullUrl = '/'.substr($_SERVER['REQUEST_URI'], 1);
-        $parsedUrl = parse_url($fullUrl);
-        $path = $parsedUrl['path'];
-
-        # If route found...
-        if (isset($this->routes[$path])) {
-            # Persist previous URL; used for form validation redirection
-            $this->previousUrl = $this->sessionGet($this->sessionPrevious);
-            $this->sessionSet($this->sessionPrevious, $fullUrl);
-
-            # Initialize Controller and invoke method
-            $controllerName = "App\Controllers\\".$this->routes[$path][0];
-            $controller = new $controllerName($this);
-            $method = $this->routes[$path][1];
-            return $controller->$method();
-        # Route not found, return 404 error page
-        } else {
-            return $this->blade->view()->make('errors.404')->with(['app' => $this])->render();
-        }
+        return !is_null($this->errors) and count($this->errors) > 0;
     }
 
     /**
-     * Gets a "route parameter" (which is just a query string)
-     */
-    public function param($key, $default = null)
-    {
-        return isset($_GET[$key]) ? $_GET[$key] : $default;
-    }
-
-    /**
-     * Gets data from form submission; works with GET or POST
-     */
+    * Gets data from form submission; works with GET or POST
+    */
     public function input($key, $default = null)
     {
         if (isset($_GET[$key])) {
@@ -151,26 +160,34 @@ class App
     }
 
     /**
+    * Retrieve data from the session after a redirect
+    */
+    public function old(string $key, $default = null)
+    {
+        return $this->old[$key] ?? $default;
+    }
+
+    /**
+    * Gets a "route parameter" (which is just a query string)
+    */
+    public function param($key, $default = null)
+    {
+        return isset($_GET[$key]) ? $_GET[$key] : $default;
+    }
+
+    /**
      * Build a path relative to the document root
      */
     public function path(string $path)
     {
         return DOC_ROOT.$path;
     }
-
+   
     /**
-    * Returns a view; makes $app available in the view
+    * Redirect to a given path
+    * Will optionally persist a set of data to the session
+    * This data can be retrieved using `old`
     */
-    public function view(string $view, $data = [])
-    {
-        echo $this->blade->view()->make($view)->with($data)->with(['app' => $this])->render();
-    }
-
-    /**
-     * Redirect to a given path
-     * Will optionally persist a set of data to the session
-     * This data can be retrieved using `old`
-     */
     public function redirect($path, $data = null)
     {
         if (!is_null($data)) {
@@ -181,11 +198,58 @@ class App
     }
 
     /**
-     * Retrieve data from the session after a redirect
+     * Parses current url, returning a matching route if it exists
      */
-    public function old(string $key, $default = null)
+    public function route()
     {
-        return $this->old[$key] ?? $default;
+        $fullUrl = '/'.substr($_SERVER['REQUEST_URI'], 1);
+        $parsedUrl = parse_url($fullUrl);
+        $path = $parsedUrl['path'];
+
+        # If route found...
+        if (isset($this->routes[$path])) {
+            # Persist previous URL; used for form validation redirection
+            $this->previousUrl = $this->sessionGet($this->sessionPrevious);
+            $this->sessionSet($this->sessionPrevious, $fullUrl);
+
+            # Initialize Controller and invoke method
+            $controllerName = "App\Controllers\\".$this->routes[$path][0];
+            $controller = new $controllerName($this);
+            $method = $this->routes[$path][1];
+            return $controller->$method();
+        # Route not found, return 404 error page
+        } else {
+            return $this->blade->view()->make('errors.404')->with(['app' => $this])->render();
+        }
+    }
+
+    /**
+    * Get a session value
+    */
+    public function sessionGet(string $key, $default = null)
+    {
+        $this->sessionStart();
+        return $_SESSION[$key] ?? $default;
+    }
+
+    /**
+    * Set a session value
+    */
+    public function sessionSet(string $key, $value)
+    {
+        $this->sessionStart();
+
+        $_SESSION[$key] = $value;
+    }
+
+    /**
+     * Start the session if its not already started
+     */
+    private function sessionStart()
+    {
+        if (!isset($_SESSION) && $this->context == 'web') {
+            session_start();
+        }
     }
 
     /**
@@ -212,48 +276,10 @@ class App
     }
 
     /**
-     * Get a value from .env
-     */
-    public function env(string $name, $default = null)
-    {
-        # Note: getenv fill return `false`, not null, if a value does not exist
-        return getenv($name) != false ? getenv($name) : $default;
-    }
-
-    /**
-    * Get a value from the config
+    * Returns a view; makes $app available in the view
     */
-    public function config(string $key, $default = null)
+    public function view(string $view, $data = [])
     {
-        return $this->dotAccessConfig->get($key) ?? $default;
-    }
-
-    /**
-     * Set a session value
-     */
-    public function sessionSet(string $key, $value)
-    {
-        $this->sessionStart();
-
-        $_SESSION[$key] = $value;
-    }
-
-    /**
-     * Get a session value
-     */
-    public function sessionGet(string $key, $default = null)
-    {
-        $this->sessionStart();
-        return $_SESSION[$key] ?? $default;
-    }
-
-    /**
-     * Start the session if its not already started
-     */
-    private function sessionStart()
-    {
-        if (!isset($_SESSION)) {
-            session_start();
-        }
+        echo $this->blade->view()->make($view)->with($data)->with(['app' => $this])->render();
     }
 }
