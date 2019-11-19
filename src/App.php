@@ -32,6 +32,12 @@ class App
         $app = $this; # Define $app as $this because it's used in config.php
         $this->dotAccessConfig = new \Dflydev\DotAccessData\Data(include DOC_ROOT.'config.php');
 
+        # Set up error reporting
+        # (ToDo: Make this environment specific, or leave always on for learning purposes?)
+        ini_set('display_errors', 1);
+        ini_set('display_startup_errors', 1);
+        error_reporting(E_ALL);
+
         # Set the context [`web` (default) or `console`]
         $this->context = $context;
 
