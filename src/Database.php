@@ -28,12 +28,13 @@ class Database
      */
     public function run($statement, $data = null)
     {
-        $statement = $this->pdo->prepare($statement);
-
-        if ($statement->execute($data)) {
-            return $statement;
-        } else {
-            return $statement->errorInfo();
+        try {
+            $prepared = $this->pdo->prepare($statement);
+            $prepared->execute($data);
+            return $prepared;
+        } catch (\PDOException $e) {
+            dump($statement);
+            dump($e->getMessage());
         }
     }
 
@@ -42,7 +43,7 @@ class Database
      */
     public function all($table)
     {
-        return $this->run("SELECT * FROM ".$table)->fetchAll();
+        return $this->run("SELECT * FROM ".$table." ORDER BY id DESC")->fetchAll();
     }
 
     /**
@@ -55,13 +56,43 @@ class Database
 
         $sql = "INSERT INTO ".$table. "(".implode(', ', $fields).") values (:".implode(', :', $fields).")";
 
-        return $this->run($sql, $data);
+        $this->run($sql, $data);
+
+        return true;
+    }
+
+    /**
+     * Return all rows where the given $column matches the given $value
+     */
+    public function findByColumn($table, $column, $operator = '=', $value)
+    {
+        $sql = "SELECT * FROM `" . $table . "` WHERE `" . $column . "` " . $operator . " :" . $column;
+        
+        $statement = $this->run($sql, [
+            $column => $value
+        ]);
+        
+        return ($statement) ? $statement->fetchAll() : null;
+    }
+
+    /**
+    * Return a single row where the id matches the given $id
+    */
+    public function findById($table, $id)
+    {
+        $sql = "SELECT * FROM " . $table . " WHERE id = :id";
+        
+        $statement = $this->run($sql, ['id' => $id]);
+
+        $results = $statement->fetch();
+
+        return ($results) ? $results : null;
     }
 
     /**
      * Migration method used to create a new table
      */
-    public function createTable($table, $columns, $id = true)
+    public function createTable($table, $columns)
     {
         # Drop table if it exists
         $sql = 'DROP TABLE IF EXISTS ' . $table . ';';
@@ -71,16 +102,14 @@ class Database
         $sql = ' CREATE TABLE ' . $table . ' (';
 
         # Set up table with auto-incremending primary key `id`
-        if ($id) {
-            $sql .= 'id int NOT NULL AUTO_INCREMENT,';
-            $sql .= 'PRIMARY KEY (id), ';
-        }
-
+        $sql .= 'id int NOT NULL AUTO_INCREMENT,';
+        $sql .= 'PRIMARY KEY (id), ';
+        
         foreach ($columns as $name => $type) {
             $sql .= $name . ' ' . $type . ',';
         }
 
-        $sql = rtrim($sql, ',').')';
+        $sql = rtrim($sql, ',').') ENGINE=InnoDB DEFAULT CHARSET=utf8;';
         
         $this->run($sql, []);
 
