@@ -263,7 +263,7 @@ class App
      */
     public function validate(array $rules)
     {
-        $validator = new Validate($rules, $_POST);
+        $validator = new Validate($rules, $this->inputAll());
 
         $errors = $validator->validate();
         
