@@ -212,6 +212,10 @@ class App
         $parsedUrl = parse_url($fullUrl);
         $path = $parsedUrl['path'];
 
+        if ($path != '/') {
+            $path = rtrim($path, '/');
+        }
+
         # If route found...
         if (isset($this->routes[$path])) {
             # Persist previous URL; used for form validation redirection
