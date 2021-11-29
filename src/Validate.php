@@ -97,6 +97,23 @@ class Validate
     }
 
     /**
+     * The value can only contain alpha-numeric characters, dashes, and/or underscores
+     */
+    protected function alphaNumericDash($value)
+    {
+        if (! ctype_alnum(str_replace(' ', '', $value))) {
+            return false;
+        }
+
+        return preg_match('/^[\pL\pM\pN_-].+$/u', $value) > 0;
+    }
+
+    protected function alphaNumericDashMessage()
+    {
+        return 'can only contain letters, numbers, dashes, and/or underscores';
+    }
+
+    /**
      * The value can only contain digits (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
      */
     protected function digit($value)
