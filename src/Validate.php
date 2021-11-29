@@ -101,11 +101,7 @@ class Validate
      */
     protected function alphaNumericDash($value)
     {
-        if (! ctype_alnum(str_replace(' ', '', $value))) {
-            return false;
-        }
-
-        return preg_match('/^[\pL\pM\pN_-].+$/u', $value) > 0;
+        return ctype_alnum(str_replace([' ', '-', '_'], '', $value));
     }
 
     protected function alphaNumericDashMessage()
