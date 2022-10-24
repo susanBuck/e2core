@@ -8,7 +8,6 @@ class App
      * Properties
      */
     private $routes;
-    private $config;
     private $errors = [];
     private $old;
     private $blade;
@@ -26,14 +25,15 @@ class App
      */
     public function __construct($context = 'web')
     {
-        # Initialize Dotenv
-        $dotenv = new \Dotenv\Dotenv(DOC_ROOT);
-        $dotenv->load();
-        $app = $this; # Define $app as $this because it's used in config.php
-        $this->dotAccessConfig = new \Dflydev\DotAccessData\Data(include DOC_ROOT.'config.php');
+        # Define $app as $this because it’s used in config.php
+        $app = $this;
 
+        # Initialize Dotenv
+        $config = include(DOC_ROOT . 'config.php');
+        $this->dotAccessConfig = new \Dflydev\DotAccessData\Data($config);
+        
         # Set up error reporting
-        # (ToDo: Make this environment specific, or leave always on for learning purposes?)
+        # (TODO: Make this environment specific, or leave always on for learning purposes?)
         ini_set('display_errors', 1);
         ini_set('display_startup_errors', 1);
         error_reporting(E_ALL);
@@ -56,7 +56,7 @@ class App
         $this->routes = include DOC_ROOT.'routes.php';
     
         # Initialize Blade
-        $this->blade = new \Philo\Blade\Blade(DOC_ROOT . '/views', DOC_ROOT . '/cache');
+        $this->blade = new \Jenssegers\Blade\Blade(DOC_ROOT . '/views', DOC_ROOT . '/cache');
     }
 
     /**
@@ -273,7 +273,6 @@ class App
         
         # If there are errors...
         if (count($errors) > 0) {
-
             # Store the errors
             $this->sessionSet($this->sessionErrors, $errors);
 
@@ -290,6 +289,6 @@ class App
     */
     public function view(string $view, $data = [])
     {
-        echo $this->blade->view()->make($view)->with($data)->with(['app' => $this])->render();
+        echo $this->blade->make($view)->with($data)->with(['app' => $this])->render();
     }
 }
