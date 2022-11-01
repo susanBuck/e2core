@@ -10,10 +10,10 @@
         }
     ],
     "require": {
-        "vlucas/phpdotenv": "^5.5",
-        "dflydev/dot-access-data": "^3.0",
-        "jenssegers/blade": "^1.4",
-        "symfony/var-dumper": "^6.1"
+        "vlucas/phpdotenv": "^5.5.0",
+        "dflydev/dot-access-data": "^3.0.0",
+        "jenssegers/blade": "^1.4.0",
+        "symfony/var-dumper": "^6.0.0"
     },
     "autoload": {
         "psr-4": {
