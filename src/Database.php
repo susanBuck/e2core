@@ -54,7 +54,7 @@ class Database
     {
         $fields = array_keys($data);
 
-        $sql = "INSERT INTO ".$table. "(".implode(', ', $fields).") values (:".implode(', :', $fields).")";
+        $sql = "INSERT INTO " . $table . "(" . implode(', ', $fields).") values (:" . implode(', :', $fields) . ")";
 
         $this->run($sql, $data);
 
@@ -64,7 +64,7 @@ class Database
     /**
      * Return all rows where the given $column matches the given $value
      */
-    public function findByColumn($table, $column, $operator = '=', $value)
+    public function findByColumn($table, $column, $operator, $value)
     {
         $sql = "SELECT * FROM `" . $table . "` WHERE `" . $column . "` " . $operator . " :" . $column;
         

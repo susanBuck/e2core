@@ -2,6 +2,11 @@
 
 namespace E2;
 
+use Jenssegers\Blade\Blade;
+use Dotenv\Dotenv;
+use Dotenv\Exception\InvalidPathException;
+use Dflydev\DotAccessData\Data;
+
 class App
 {
     /**
@@ -27,10 +32,18 @@ class App
     {
         # Define $app as $this because it’s used in config.php
         $app = $this;
-
+        
         # Initialize Dotenv
+        try {
+            $dotenv = Dotenv::createImmutable(DOC_ROOT);
+            $dotenv->load();
+        } catch(InvalidPathException $e) {
+            dump($e->getMessage());
+        }
+        
+        # Load config
         $config = include(DOC_ROOT . 'config.php');
-        $this->dotAccessConfig = new \Dflydev\DotAccessData\Data($config);
+        $this->dotAccessConfig = new Data($config);
         
         # Set up error reporting
         # (TODO: Make this environment specific, or leave always on for learning purposes?)
@@ -56,7 +69,7 @@ class App
         $this->routes = include DOC_ROOT.'routes.php';
     
         # Initialize Blade
-        $this->blade = new \Jenssegers\Blade\Blade(DOC_ROOT . '/views', DOC_ROOT . '/cache');
+        $this->blade = new Blade(DOC_ROOT . '/views', DOC_ROOT . '/cache');
     }
 
     /**
@@ -77,7 +90,7 @@ class App
         $method = $args[2];
 
         # Set up command
-        $commandName = "App\Commands\\".$commandName."Command";
+        $commandName = "App\Commands\\" . $commandName . "Command";
         $command = new $commandName($this);
 
         dump("Executing $commandName@$method");
@@ -103,7 +116,7 @@ class App
             $password = $this->env('DB_PASSWORD');
             $charset = $this->env('DB_CHARSET', 'utf8mb4');
 
-            $this->db = new Database($host, $database, $username, $password, 'utf8mb4');
+            $this->db = new Database($host, $database, $username, $password, $charset);
         }
         return $this->db;
     }
@@ -113,8 +126,7 @@ class App
     */
     public function env(string $name, $default = null)
     {
-        # Note: getenv fill return `false`, not null, if a value does not exist
-        return getenv($name) != false ? getenv($name) : $default;
+        return $_ENV[$name] ?? $default;
     }
 
     /**
@@ -200,7 +212,7 @@ class App
             $this->sessionSet($this->sessionRedirect, $data);
         }
 
-        header('Location: '.$path);
+        header('Location: ' . $path);
     }
 
     /**
@@ -208,7 +220,7 @@ class App
      */
     public function route()
     {
-        $fullUrl = '/'.substr($_SERVER['REQUEST_URI'], 1);
+        $fullUrl = '/' . substr($_SERVER['REQUEST_URI'], 1);
         $parsedUrl = parse_url($fullUrl);
         $path = $parsedUrl['path'];
 
