@@ -66,7 +66,7 @@ class App
         $this->sessionSet($this->sessionRedirect, null);
 
         # Load routes
-        $this->routes = include DOC_ROOT.'routes.php';
+        $this->routes = include DOC_ROOT . 'routes.php';
     
         # Initialize Blade
         $this->blade = new Blade(DOC_ROOT . '/views', DOC_ROOT . '/cache');
@@ -198,7 +198,7 @@ class App
      */
     public function path(string $path)
     {
-        return DOC_ROOT.$path;
+        return DOC_ROOT . $path;
     }
    
     /**
@@ -222,7 +222,7 @@ class App
     {
         $fullUrl = '/' . substr($_SERVER['REQUEST_URI'], 1);
         $parsedUrl = parse_url($fullUrl);
-        $path = $parsedUrl['path'];
+        $path = $parsedUrl['path'] ?? '';
 
         if ($path != '/') {
             $path = rtrim($path, '/');
@@ -241,7 +241,7 @@ class App
             return $controller->$method();
         # Route not found, return 404 error page
         } else {
-            return $this->blade->view()->make('errors.404')->with(['app' => $this])->render();
+            return $this->view('errors.404', ['app' => $this]);
         }
     }
 
