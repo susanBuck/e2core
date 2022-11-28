@@ -58,7 +58,7 @@ class Database
 
         $this->run($sql, $data);
 
-        return true;
+        return (int)$this->pdo->lastInsertId();
     }
 
     /**
