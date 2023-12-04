@@ -32,7 +32,7 @@ class App
     {
         # Define $app as $this because it’s used in config.php
         $app = $this;
-        
+
         # Initialize Dotenv
         try {
             $dotenv = Dotenv::createImmutable(DOC_ROOT);
@@ -40,11 +40,11 @@ class App
         } catch(InvalidPathException $e) {
             dump($e->getMessage());
         }
-        
+
         # Load config
         $config = include(DOC_ROOT . 'config.php');
         $this->dotAccessConfig = new Data($config);
-        
+
         # Set up error reporting
         # (TODO: Make this environment specific, or leave always on for learning purposes?)
         ini_set('display_errors', 1);
@@ -67,7 +67,7 @@ class App
 
         # Load routes
         $this->routes = include DOC_ROOT . 'routes.php';
-    
+
         # Initialize Blade
         $this->blade = new Blade(DOC_ROOT . '/views', DOC_ROOT . '/cache');
     }
@@ -115,8 +115,9 @@ class App
             $username = $this->env('DB_USERNAME');
             $password = $this->env('DB_PASSWORD');
             $charset = $this->env('DB_CHARSET', 'utf8mb4');
+            $port = $this->env('DB_PORT', '3306');
 
-            $this->db = new Database($host, $database, $username, $password, $charset);
+            $this->db = new Database($host, $database, $username, $password, $charset, $port);
         }
         return $this->db;
     }
@@ -200,7 +201,7 @@ class App
     {
         return DOC_ROOT . $path;
     }
-   
+
     /**
     * Redirect to a given path
     * Will optionally persist a set of data to the session
@@ -235,7 +236,7 @@ class App
             $this->sessionSet($this->sessionPrevious, $fullUrl);
 
             # Initialize Controller and invoke method
-            $controllerName = "App\Controllers\\".$this->routes[$path][0];
+            $controllerName = "App\Controllers\\" . $this->routes[$path][0];
             $controller = new $controllerName($this);
             $method = $this->routes[$path][1];
             return $controller->$method();
@@ -282,7 +283,7 @@ class App
         $validator = new Validate($rules, $this->inputAll());
 
         $errors = $validator->validate();
-        
+
         # If there are errors...
         if (count($errors) > 0) {
             # Store the errors
@@ -291,7 +292,7 @@ class App
             # Redirect to previous URL, persisting the input into the session
             # so it can be retrieved via `old` method
             $this->redirect($this->previousUrl, $this->inputAll());
-            
+
             die();
         }
     }

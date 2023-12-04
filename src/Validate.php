@@ -1,8 +1,12 @@
 <?php
+
 namespace E2;
 
 class Validate
 {
+    private $fieldsToValidate;
+    private $data;
+
     public function __construct($fieldsToValidate, $data)
     {
         $this->fieldsToValidate = $fieldsToValidate;
@@ -29,7 +33,7 @@ class Validate
             foreach ($rules as $rule) {
                 # Get the value for this field from the request
                 $value = $this->data[$fieldName];
-                
+
                 # Handle any parameters with the rule, e.g. max:99
                 $parameter = null;
                 if (strstr($rule, ':')) {

@@ -1,4 +1,5 @@
 <?php
+
 namespace E2;
 
 class Database
@@ -8,9 +9,9 @@ class Database
     /**
      * Establish a PDO connection
      */
-    public function __construct($host, $database, $username, $password, $charset)
+    public function __construct($host, $database, $username, $password, $charset, $port)
     {
-        $dsn = "mysql:host=$host;dbname=$database;charset=$charset";
+        $dsn = "mysql:host=$host;dbname=$database;charset=$charset;port=$port";
         $options = [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
@@ -43,7 +44,7 @@ class Database
      */
     public function all($table)
     {
-        return $this->run("SELECT * FROM ".$table." ORDER BY id DESC")->fetchAll();
+        return $this->run("SELECT * FROM " . $table . " ORDER BY id DESC")->fetchAll();
     }
 
     /**
@@ -54,7 +55,7 @@ class Database
     {
         $fields = array_keys($data);
 
-        $sql = "INSERT INTO " . $table . "(" . implode(', ', $fields).") values (:" . implode(', :', $fields) . ")";
+        $sql = "INSERT INTO " . $table . "(" . implode(', ', $fields) . ") values (:" . implode(', :', $fields) . ")";
 
         $this->run($sql, $data);
 
@@ -67,11 +68,11 @@ class Database
     public function findByColumn($table, $column, $operator, $value)
     {
         $sql = "SELECT * FROM `" . $table . "` WHERE `" . $column . "` " . $operator . " :" . $column;
-        
+
         $statement = $this->run($sql, [
             $column => $value
         ]);
-        
+
         return ($statement) ? $statement->fetchAll() : null;
     }
 
@@ -81,7 +82,7 @@ class Database
     public function findById($table, $id)
     {
         $sql = "SELECT * FROM " . $table . " WHERE id = :id";
-        
+
         $statement = $this->run($sql, ['id' => $id]);
 
         $results = $statement->fetch();
@@ -104,13 +105,13 @@ class Database
         # Set up table with auto-incremending primary key `id`
         $sql .= 'id int NOT NULL AUTO_INCREMENT,';
         $sql .= 'PRIMARY KEY (id), ';
-        
+
         foreach ($columns as $name => $type) {
             $sql .= $name . ' ' . $type . ',';
         }
 
-        $sql = rtrim($sql, ',').') ENGINE=InnoDB DEFAULT CHARSET=utf8;';
-        
+        $sql = rtrim($sql, ',') . ') ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+
         $this->run($sql, []);
 
         return $sql;
